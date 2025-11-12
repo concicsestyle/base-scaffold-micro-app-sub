@@ -1,0 +1,119 @@
+pipeline {
+
+    agent {
+        kubernetes {
+            inheritFrom "nodejs base"
+            containerTemplate {
+                name "nodejs"
+                image "hbr.sinomach-he.cn:12345/library/node:18.12.0"
+            }
+        }
+    }
+
+    parameters {
+        choice(name: "BRANCH", choices: ["prod"], description: "需要部署的分支")
+        choice(name: "ENVIRONMENT", choices: ["prod"], description: "需要发布的环境")
+        string(name: "TAG_VERSION", defaultValue: "no", description: "发布版本号")
+    }
+
+    environment {
+        REGISTRY = "hbr.sinomach-he.cn:12345"
+        REGISTRY_NAMESPACE = "base-scaffold"
+        REGISTRY_CREDENTIAL_ID = "harbor"
+        REGISTRY_SECRET = "harbor"
+        K8S_NAMESPACE = "base-scaffold-prod"
+        KUBECONFIG_CREDENTIAL_ID = "kubeconfig"
+        APP_NAME = "base-scaffold-admin"
+        APPLICATION_NAME = "base-scaffold"
+    }
+
+    stages {
+
+        stage("变量初始化") {
+            agent none
+            steps {
+                container("maven") {
+                    script {
+                        tagVersion = "${params.TAG_VERSION}"
+                        if("${params.TAG_VERSION}".trim() == "no") {
+                            tagVersion = "SNAPSHOT-$BUILD_NUMBER"
+                        }
+                        println "发布版本号：${tagVersion}"
+                    }
+                }
+            }
+        }
+
+        stage("代码拉取") {
+            agent none
+            steps {
+                git(
+                    url: "https://git.erzhong-heavy.com:11210/ms-foundation/base-scaffold/base-scaffold-admin.git",
+                    credentialsId: "git-account",
+                    branch: "${params.BRANCH}",
+                    changelog: true,
+                    poll: false
+                )
+                sh "ls -al"
+            }
+        }
+
+        stage("项目编译") {
+            agent none
+            steps {
+                container("nodejs") {
+                    sh "node -v"
+                    sh "npm -v"
+                    sh "npm install pnpm -g --registry=https://registry.npmmirror.com"
+                    sh "pnpm install"
+                    sh "npm run build:${params.ENVIRONMENT}"
+                    sh "ls -al"
+                }
+
+            }
+        }
+
+        stage("构建镜像") {
+            agent none
+            steps {
+                container("base") {
+                    sh "ls"
+                    sh "docker build \
+                    -f Dockerfile -t $REGISTRY/$REGISTRY_NAMESPACE/$APP_NAME-${params.ENVIRONMENT}:${tagVersion} ."
+                }
+            }
+        }
+
+        stage("镜像推送") {
+            agent none
+            steps {
+                container("base") {
+                    withCredentials([usernamePassword(credentialsId : "$REGISTRY_CREDENTIAL_ID", usernameVariable : "REGISTRY_USERNAME", passwordVariable : "REGISTRY_PASSWORD")]) {
+                        sh "echo '$REGISTRY_PASSWORD' | docker login $REGISTRY -u '$REGISTRY_USERNAME' --password-stdin"
+                        sh "docker push $REGISTRY/$REGISTRY_NAMESPACE/$APP_NAME-${params.ENVIRONMENT}:${tagVersion}"
+                        sh "docker rmi $REGISTRY/$REGISTRY_NAMESPACE/$APP_NAME-${params.ENVIRONMENT}:${tagVersion}"
+                    }
+                }
+
+            }
+        }
+
+         stage("部署发布") {
+              steps {
+                  container ("base") {
+                    script {
+                        env.APP_ENV = "${params.ENVIRONMENT}"
+                        env.TAG_VERSION = "${tagVersion}"
+                        env.APP_CPU = "1000m"
+                        env.APP_MEMORY = "2048Mi"
+                        withCredentials([kubeconfigFile(credentialsId: env.KUBECONFIG_CREDENTIAL_ID,variable: "KUBECONFIG")]) {
+                            sh "envsubst < 00-deploy/pipeline/${params.ENVIRONMENT}/deploy-remote.yaml | kubectl apply -f -"
+                        }
+                    }
+
+                  }
+              }
+         }
+
+    }
+}

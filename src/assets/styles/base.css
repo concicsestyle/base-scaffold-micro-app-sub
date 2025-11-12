@@ -1,0 +1,29 @@
+:root {
+  --bg-fill-3: #F2F3F5;
+  --color-icon: #505868;
+  --color-text-5: #1D2129;
+  --color-text-3: #86909C;
+  --color-text-sub-light: #4e5969;
+  --color-hover-light: #f2f3f5;
+  --color-banner-cover: #1E2380;
+  --color-white: #fff;
+  --color-app-bg-light: #F7F8FA;
+
+  --color-primary: #0075C2;
+  --color-primary-plain: #E8F3FF;
+  --color-primary-2: #165DFF;
+}
+
+/* 亮色主题 */
+:root {
+  --color-text-sub: var(--color-text-sub-light);
+  --color-hover: var(--color-hover-light);
+  --color-bg-card: var(--color-white);
+  --color-bg-app: var(--color-app-bg-light)
+}
+
+/* 暗黑主题 */
+@media (prefers-color-scheme: dark) {
+  :root {
+  }
+}

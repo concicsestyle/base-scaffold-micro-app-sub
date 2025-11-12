@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: $APP_NAME-$APP_ENV
+    app.kubernetes.io/name: $APPLICATION_NAME
+    app.kubernetes.io/version: v1
+    version: v1
+  annotations:
+    servicemesh.kubesphere.io/enabled: 'true'
+  name: $APP_NAME-$APP_ENV-v1
+  namespace: $K8S_NAMESPACE
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      app: $APP_NAME-$APP_ENV
+      app.kubernetes.io/name: $APPLICATION_NAME
+      app.kubernetes.io/version: v1
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: $APP_NAME-$APP_ENV
+        app.kubernetes.io/name: $APPLICATION_NAME
+        app.kubernetes.io/version: v1
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/interceptionMode: TPROXY
+    spec:
+      volumes:
+        - name: nginx
+          configMap:
+            name: nginx-config
+            items:
+              - key: micro-app-sub-ysmk.conf
+                path: default.conf
+            defaultMode: 420
+      containers:
+        - image: $REGISTRY/$REGISTRY_NAMESPACE/$APP_NAME-$APP_ENV:$TAG_VERSION
+          imagePullPolicy: Always
+          name: $APP_NAME-$APP_ENV
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              cpu: $APP_CPU
+              memory: $APP_MEMORY
+            requests:
+              cpu: $APP_CPU
+              memory: $APP_MEMORY
+          volumeMounts:
+            - name: nginx
+              readOnly: true
+              mountPath: /etc/nginx/conf.d/
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      imagePullSecrets:
+        - name: $REGISTRY_SECRET
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
