@@ -15,7 +15,7 @@
       </div>
     </div>
     <div v-if="topMenus.length > visibleNumber">
-      <el-popover class="box-item" placement="bottom" trigger="click" width="868">
+      <el-popover class="box-item" placement="bottom" trigger="hover" width="868">
         <template #reference>
           <div class="menu-item">
             <svg-icon icon-class="more" />
@@ -31,6 +31,7 @@
       </el-popover>
     </div>
   </div>
+
   <!--<el-menu :default-active="activeMenu" mode="horizontal" :ellipsis="false" @select="handleSelect">-->
   <!--  &lt;!&ndash;<div class="logo-div" @click="goToExternalLink">&ndash;&gt;-->
   <!--  &lt;!&ndash;  <img src="@/assets/images/menuLog.png" style="height: 80px; width: 180px" />&ndash;&gt;-->
@@ -47,12 +48,13 @@
   <!--  </template>-->
 
   <!--  &lt;!&ndash; 顶部菜单超出数量折叠 &ndash;&gt;-->
-  <!--  <el-sub-menu v-if="topMenus.length > visibleNumber" :style="{ '&#45;&#45;theme': theme }" index="more">-->
-  <!--    <template #title>更多菜单</template>-->
+  <!--  <el-sub-menu v-if="topMenus.length > visibleNumber" :style="{ '&#45;&#45;theme': theme }" index="more" style="margin-left: 10px">-->
+  <!--    <template #title><span style="font-size: 18px">更多菜单</span></template>-->
   <!--    <template v-for="(item, index) in topMenus">-->
-  <!--      <el-menu-item v-if="index >= visibleNumber" :key="index" :index="item.path"-->
-  <!--        ><svg-icon :icon-class="item.meta ? item.meta.icon : ''" /> {{ item.meta?.title }}</el-menu-item-->
-  <!--      >-->
+  <!--      <el-menu-item v-if="index >= visibleNumber" :key="index" :index="item.path">-->
+  <!--        <svg-icon :icon-class="item.meta ? item.meta.icon : ''" style="height: 20px; width: 20px" />-->
+  <!--        <span class="mr-2"></span>{{ item.meta?.title }}-->
+  <!--      </el-menu-item>-->
   <!--    </template>-->
   <!--  </el-sub-menu>-->
   <!--</el-menu>-->
@@ -64,9 +66,10 @@ import { isHttp } from '@/utils/validate';
 import { useAppStore } from '@/store/modules/app';
 import { useSettingsStore } from '@/store/modules/settings';
 import { usePermissionStore } from '@/store/modules/permission';
-import { RouteRecordRaw } from 'vue-router';
-import { Action } from 'element-plus';
-import { useUserStore } from '@/store/modules/user';
+import { RouteRecordRaw, useRoute, useRouter } from 'vue-router';
+import { useSubMicroAppRouter } from '@/composables/useSubMicroAppRouter';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import SvgIcon from '@/components/SvgIcon/index.vue';
 
 // 顶部栏初始数
 const visibleNumber = ref<number>(-1);
@@ -76,7 +79,6 @@ const currentIndex = ref<string>();
 const hideList = ['/index', '/adminUser/profile'];
 
 const appStore = useAppStore();
-const userStore = useUserStore();
 const settingsStore = useSettingsStore();
 const permissionStore = usePermissionStore();
 const route = useRoute();
@@ -86,9 +88,6 @@ const router = useRouter();
 const theme = computed(() => settingsStore.theme);
 // 所有的路由信息
 const routers = computed(() => permissionStore.getTopbarRoutes());
-const portalUrl = ref(import.meta.env.VITE_APP_BASE_PLATFORM_PORTAL_URL);
-// 微前端应用编码
-const microAppCode = import.meta.env.VITE_APP_MICRO_APP_CODE;
 
 // 顶部显示菜单
 const topMenus = computed(() => {
@@ -103,8 +102,6 @@ const topMenus = computed(() => {
       }
     }
   });
-  // 默认激活第一个菜单
-  activeMenuV2();
   return topMenus;
 });
 
@@ -129,75 +126,11 @@ const childrenMenus = computed(() => {
   return constantRoutes.concat(childrenMenus);
 });
 
-// 默认激活菜单
-const activeMenuV2 = () => {
-  let path = route.path;
-  const activeCode = route.query?.active;
-  let hasPermissionPath = false;
-  if (activeCode) {
-    // 找到routers中对应的菜单
-    for (const perRoute of routers.value) {
-      if (perRoute.path === activeCode) {
-        path = perRoute.path;
-        hasPermissionPath = true;
-        break;
-      }
-    }
-  } else {
-    if (path === '/index') {
-      // 没有指定激活的菜单的话则默认激活第一个hide为false的菜单
-      for (const perRoute of routers.value) {
-        if (!perRoute.hidden) {
-          hasPermissionPath = true;
-          path = perRoute.path;
-          break;
-        }
-      }
-    } else {
-      // 判断路由的第一层code是否存在，不存在则默认跳转至首页
-      const firstPath = path.substring(0, path.indexOf('/', 1));
-      for (const perRoute of routers.value) {
-        if (perRoute.path === firstPath) {
-          hasPermissionPath = true;
-          break;
-        }
-      }
-    }
-  }
-  if (!hasPermissionPath) {
-    if (path === '/adminUser/profile') {
-      // 个人中心单独处理
-      path = '/adminManage/index';
-    } else {
-      // 未找到菜单权限，则跳转至母应用的首页
-      path = '/index';
-    }
-  }
-
-  // if (path === '/index') {
-  //   path = '/adminManage/index';
-  // }
-  let activePath = path;
-  if (path !== undefined && path.lastIndexOf('/') > 0 && hideList.indexOf(path) === -1) {
-    const tmpPath = path.substring(1, path.length);
-    if (!route.meta.link) {
-      activePath = '/' + tmpPath.substring(0, tmpPath.indexOf('/'));
-      appStore.toggleSideBarHide(false);
-    }
-  } else if (!route.children) {
-    activePath = path;
-    appStore.toggleSideBarHide(true);
-  }
-  // appStore.toggleSideBarHide(true);
-  activeRoutes(activePath);
-  handleSelect(activePath);
-};
-
 // 默认激活的菜单
 const activeMenu = computed(() => {
   let path = route.path;
   if (path === '/index') {
-    path = `/${microAppCode}/index`;
+    path = '/infra/adminUser';
   }
   let activePath = path;
   if (path !== undefined && path.lastIndexOf('/') > 0 && hideList.indexOf(path) === -1) {
@@ -219,12 +152,37 @@ const setVisibleNumber = () => {
   visibleNumber.value = parseInt(String(width / 85));
 };
 
+// 获取微应用路由跳转工具
+const { navigateToMicroApp } = useSubMicroAppRouter();
+
+/**
+ * 处理菜单选择 - 支持微应用路由跳转和 meta/link 跳转
+ */
 const handleSelect = (key: string) => {
+  console.log('🔍 菜单项点击:', { key, route: routers.value.find((item) => item.path === key) });
   currentIndex.value = key;
   const route = routers.value.find((item) => item.path === key);
+//   判断是不是基座的菜单
+  if(['管理端','基础设施','工作流'].includes(route?.menuDetail?.menuName)){
+    window.location.href = import.meta.env.VITE_APP_SERVER_BASEURL_MAIN;
+    return
+  }
+  // 优先检查是否有 meta/link 配置
+  if (route?.meta?.link) {
+    console.log('🔍 发现 meta.link，调用 handleLinkNavigation');
+    handleLinkNavigation(route.meta.link);
+    return;
+  }
+
+  // 检查是否为微应用路由跳转
+  if (isMicroAppRoute(key)) {
+    handleMicroAppNavigation(key, route);
+    return;
+  }
+
   if (isHttp(key)) {
-    // http(s):// 路径新窗口打开
-    window.open(key, '_blank');
+    // http(s):// 路径直接重定向到当前窗口
+    window.location.href = key;
   } else if (!route || !route.children) {
     // 没有子路由路径内部打开
     const routeMenu = childrenMenus.value.find((item) => item.path === key);
@@ -240,6 +198,129 @@ const handleSelect = (key: string) => {
     activeRoutes(key);
     appStore.toggleSideBarHide(false);
   }
+};
+
+/**
+ * 处理 meta/link 跳转
+ */
+const handleLinkNavigation = (link: string) => {
+  try {
+    console.log('🔍 子应用菜单点击链接:', link);
+    console.log('🔍 handleLinkNavigation 被调用');
+    
+    // 检查是否为外部链接
+    if (isHttp(link)) {
+      // 检查是否为微应用链接
+      if (link.includes('/sub-micro-app-')) {
+        console.log('🔍 检测到微应用链接，准备跳转:', link);
+        
+        // 使用微应用路由跳转工具
+        const { targetApp, targetPath } = parseMicroAppLink(link);
+        if (targetApp && targetPath) {
+          navigateToMicroApp(targetApp, targetPath);
+          console.log(`🔍 跳转到微应用: ${targetApp}, 路径: ${targetPath}`);
+        } else {
+          // 如果解析失败，直接跳转
+          window.location.href = link;
+          console.log(`🔍 直接跳转到微应用: ${link}`);
+        }
+        return;
+      }
+      
+      // 其他外部链接直接重定向到当前窗口
+      window.location.href = link;
+      console.log(`🔍 重定向到外部链接: ${link}`);
+    } else {
+      // 内部路由跳转
+      router.push({ path: link });
+      appStore.toggleSideBarHide(true);
+      console.log(`🔍 跳转到内部路由: ${link}`);
+    }
+  } catch (error) {
+    console.error('❌ 链接跳转失败:', error);
+  }
+};
+
+/**
+ * 解析微应用链接
+ */
+const parseMicroAppLink = (link: string): { targetApp: string; targetPath: string } => {
+  try {
+    const url = new URL(link);
+    const pathSegments = url.pathname.split('/').filter(Boolean);
+    
+    if (pathSegments.length >= 1) {
+      const targetApp = pathSegments[0]; // 如 sub-micro-app-ips
+      let targetPath = '/' + pathSegments.slice(1).join('/');
+
+      // 规范化：去掉重复的微应用前缀，例如 /sub-micro-app-ips/sub-micro-app-ips/product → /sub-micro-app-ips/product
+      const duplicatePrefix = `/${targetApp}/`;
+      while (targetPath.startsWith(duplicatePrefix)) {
+        targetPath = targetPath.slice(duplicatePrefix.length - 1);
+      }
+
+      // 如果 targetPath 仍然以 /sub-micro-app-xxx 开头，去掉微应用前缀，仅保留业务段
+      if (targetPath.startsWith(`/${targetApp}/`)) {
+        targetPath = targetPath.replace(`/${targetApp}`, '');
+      }
+
+      return { targetApp, targetPath };
+    }
+    
+    return { targetApp: '', targetPath: '' };
+  } catch (error) {
+    console.error('❌ 解析微应用链接失败:', error);
+    return { targetApp: '', targetPath: '' };
+  }
+};
+
+/**
+ * 处理微应用路由跳转
+ */
+const handleMicroAppNavigation = (key: string, route: any) => {
+  try {
+    // 解析微应用路径
+    const pathSegments = key.split('/').filter(Boolean);
+    
+    if (pathSegments.length < 1) {
+      console.error('微应用路由格式错误:', key);
+      return;
+    }
+    
+    const targetApp = pathSegments[0]; // 如: sub-micro-app-basic
+    let targetPath = '/'; // 默认路径
+    
+    // 如果有子路径，构建完整路径
+    if (pathSegments.length > 1) {
+      // 跳过第一个微应用名称，构建子路径
+      const subPath = pathSegments.slice(1).join('/');
+      targetPath = '/' + subPath;
+    }
+    
+    // 使用微应用路由跳转工具
+    navigateToMicroApp(targetApp, targetPath);
+    
+    // 更新侧边栏状态
+    appStore.toggleSideBarHide(true);
+    
+    console.log(`跳转到微应用: ${targetApp}, 路径: ${targetPath}`);
+  } catch (error) {
+    console.error('微应用路由跳转失败:', error);
+  }
+};
+
+/**
+ * 检查是否为微应用路由跳转（只有没有子菜单的微应用路由才需要跳转）
+ */
+const isMicroAppRoute = (path: string): boolean => {
+  // 只有以 /sub-micro-app- 开头且没有子菜单的路由才需要跳转
+  if (path.startsWith('/sub-micro-app-')) {
+    const route = routers.value.find((item) => item.path === path);
+    // 如果没有子菜单，则需要跳转到微应用
+    return !route || !route.children || route.children.length === 0;
+  }
+  
+  return false;
 };
 
 const activeRoutes = (key: string) => {
@@ -259,34 +340,13 @@ const activeRoutes = (key: string) => {
   return routes;
 };
 
-const goToExternalLink = () => {
-  console.log('goToExternalLink portalUrl.value', portalUrl.value);
-  ElMessageBox.confirm('请选择基础平台门户跳转方式', '即将跳转至基础平台门户', {
-    confirmButtonText: '当前窗口',
-    cancelButtonText: '新窗口',
-    distinguishCancelAndClose: true,
-    type: 'warning',
-    center: true
-  })
-    .then((v) => {
-      window.open(portalUrl.value, '_self');
-    })
-    .catch((action: Action) => {
-      if (action === 'cancel') {
-        window.open(portalUrl.value, '_blank');
-      }
-    });
-};
-
 onMounted(() => {
   window.addEventListener('resize', setVisibleNumber);
-});
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', setVisibleNumber);
+  setVisibleNumber();
 });
 
-onMounted(() => {
-  setVisibleNumber();
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', setVisibleNumber);
 });
 </script>
 
@@ -331,6 +391,17 @@ onMounted(() => {
 
 .el-menu--horizontal.el-menu {
   border: none !important;
+}
+
+.el-menu--popup-container {
+  .el-menu-item {
+    height: 50px !important;
+    line-height: 50px !important;
+    color: #999093 !important;
+    padding: 0 5px !important;
+    margin: 0 16px !important;
+    font-size: 18px !important;
+  }
 }
 </style>
 <style lang="scss" scoped>
