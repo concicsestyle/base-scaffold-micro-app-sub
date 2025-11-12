@@ -3,21 +3,23 @@ import router from '@/router';
 import { AxiosPromise } from 'axios';
 import { LoginData, LoginResult, VerifyCodeResult, TenantInfo } from './types';
 import { UserInfo } from '../../infra/admin/adminUser/types';
+import {API_PREFIX} from '../../prefix'
 
 const clientId = import.meta.env.VITE_APP_CLIENT_ID;
 const appBaseUrl = import.meta.env.VITE_APP_APP_BASEURL;
 const singleLoginWay = import.meta.env.VITE_APP_SINGLE_LOGIN_WAY;
-
+const getUrl = `/${API_PREFIX.infra}/`;
 /**
  * @param data {LoginData}
  * @returns
  */
 export function login(data: LoginData): AxiosPromise<LoginResult> {
   const params = {
-    ...data,
-    clientId: data.clientId || clientId,
-    grantType: data.grantType || 'adminPassword'
-  };
+      ...data,
+      clientId: data.clientId || clientId,
+      grantType: data.grantType || 'adminPassword'
+    };
+    console.log('%c [登录 params ]-18', 'font-size:13px; background:pink; color:#bf2c9f;', params)
   return request({
     url: '/auth/admin/login',
     headers: {
@@ -115,7 +117,7 @@ export function callback(data: LoginData): AxiosPromise<any> {
 // 获取用户详细信息
 export function getInfo(): AxiosPromise<UserInfo> {
   return request({
-    url: 'infra/admin/admin/user/getInfo',
+    url: `${getUrl}admin/admin/user/getInfo`,
     method: 'get'
   });
 }

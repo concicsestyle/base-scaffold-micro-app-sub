@@ -345,6 +345,7 @@ onMounted(async () => {
   justify-content: center;
   align-items: center;
   height: 100%;
+  width: 100%;
   background-image: url('../../../assets/images/login-bg1.png');
   background-size: cover;
 }
@@ -396,6 +397,7 @@ onMounted(async () => {
 }
 
 .login-code {
+  margin-top:10px;
   width: 33%;
   height: 40px;
   float: right;
