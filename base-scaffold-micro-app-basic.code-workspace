@@ -1,0 +1,28 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../base-scaffold-micro-app-eam"
+		},
+		{
+			"path": "../base-scaffold-micro-app-ips"
+		},
+		{
+			"path": "../base-scaffold-micro-app-main"
+		},
+		{
+			"path": "../base-scaffold-micro-app-mes"
+		},
+		{
+			"path": "../base-scaffold-micro-app-ppm"
+		},
+		{
+			"path": "../base-scaffold-micro-app-qms"
+		},
+		{
+			"path": "../base-scaffold-micro-app-sys"
+		}
+	]
+}

@@ -9,7 +9,7 @@ export default defineConfig(({ mode, command }) => {
     envDir: './env', // 自定义env目录
     // 部署生产环境和开发环境下的URL。
     // 默认情况下，vite 会假设你的应用是被部署在一个域名的根路径上
-    base: env.VITE_APP_CONTEXT_PATH,
+    base: '/sub-micro-app-basic/',
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src')
@@ -38,7 +38,7 @@ export default defineConfig(({ mode, command }) => {
         scss: {
           // additionalData: '@use "@/assets/styles/variables.module.scss as *";'
           // javascriptEnabled: true
-          api: 'modern-compiler'
+          // api: 'modern-compiler'
         }
       },
       postcss: {
@@ -74,6 +74,12 @@ export default defineConfig(({ mode, command }) => {
         'image-conversion',
         'element-plus/es/components/**/css'
       ]
+    },
+    // 构建配置
+    build: {
+      // 构建输出目录，打包后的文件会放在 dist/app-basic 文件夹内
+      outDir: 'dist/sub-micro-app-basic'
+      // 如需调整静态资源目录，可开启：assetsDir: 'assets'
     }
   };
 });

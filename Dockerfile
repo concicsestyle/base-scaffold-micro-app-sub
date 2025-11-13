@@ -1,5 +1,8 @@
 FROM hbr.sinomach-he.cn:12345/library/nginx:1.26.3
 
-RUN rm -rf /usr/share/nginx/html/base-scaffold-micro-app-sub/
+RUN rm -rf /etc/nginx/nginx.conf && mkdir -p /data/frontend/
 
-ADD dist /usr/share/nginx/html/base-scaffold-micro-app-sub/
+ADD  nginx.conf   /etc/nginx/
+
+ADD dist /data/frontend/
+
