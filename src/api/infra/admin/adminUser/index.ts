@@ -2,9 +2,10 @@ import { DeptTreeVO, DeptVO, DeptForm } from '@/api/infra/admin/adminDept/types'
 import { RoleVO } from '@/api/infra/admin/adminRole/types';
 import request from '../../../../utils/request';
 import { AxiosPromise } from 'axios';
-import { UserForm, UserQuery, UserVO, UserInfoVO } from './types';
+import { UserForm, UserQuery, UserVO, UserInfoVO, UserAndDept } from './types';
 import { parseStrEmpty } from '@/utils/common';
-
+import {API_PREFIX} from '../../../prefix'
+const getUrl = `/${API_PREFIX.infra}/`;
 /**
  * 查询用户列表
  * @param query
@@ -115,7 +116,7 @@ export const changeUserStatus = (userId: number | string, status: string) => {
  */
 export const getUserProfile = (): AxiosPromise<UserInfoVO> => {
   return request({
-    url: 'infra/admin/admin/userProfile',
+    url: `${getUrl}admin/admin/userProfile`,
     method: 'get'
   });
 };
@@ -194,13 +195,13 @@ export const updateAuthRole = (data: { userId: string; roleIds: string }) => {
  */
 export const listUserByDeptId = (deptId: string | number): AxiosPromise<UserVO[]> => {
   return request({
-    url: 'infra/admin/admin/user/list/dept/' + deptId,
+    url: `${getUrl}/admin/admin/user/list/dept/` + deptId,
     method: 'get'
   });
 };
 
 /**
- * 查询部门下拉树结构
+ * 查询部门下拉树结构（支持传参）
  */
 export const deptTreeSelect = (): AxiosPromise<DeptTreeVO[]> => {
   return request({
@@ -209,6 +210,39 @@ export const deptTreeSelect = (): AxiosPromise<DeptTreeVO[]> => {
   });
 };
 
+/**
+ * 查询部门下拉树结构忽略子公司及以下
+ */
+export const newDeptTree = (): AxiosPromise<DeptTreeVO[]> => {
+  return request({
+    url: getUrl+'admin/admin/user/newDeptTree',
+    method: 'get'
+  });
+};
+
+
+
+/**
+ * 查询部门 人员 
+ */
+export const deptUsers = (param): AxiosPromise<UserAndDept[]> => {
+  return request({
+    url: getUrl+'admin/user/deptUsers',
+    method: 'post',
+    data:param
+  });
+};
+
+/**
+ * 查询部门下人员下拉树结构忽略子公司及以下
+ */
+export const DeptAndUserTree = (param): AxiosPromise<UserAndDept[]> => {
+  return request({
+    url: getUrl+'admin/user/deptAndUserTree',
+    method: 'post',
+    data:param
+  });
+};
 /**
  * 用户当前部门下角色列表
  */
@@ -332,5 +366,7 @@ export default {
   getAuthRole,
   updateAuthRole,
   deptTreeSelect,
-  listUserByDeptId
+  newDeptTree,
+  listUserByDeptId,
+  DeptAndUserTree
 };

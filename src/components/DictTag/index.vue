@@ -1,6 +1,16 @@
+<!--
+ * @Description: 
+ * @Autor: 王瑶
+ * @Date: 2025-07-09 11:05:19
+ * @LastEditors: 王瑶
+ * @LastEditTime: 2025-08-22 17:23:32
+-->
 <template>
   <div>
-    <template v-for="(item, index) in options">
+    <template v-if="value ==null||value == undefined|| value == ''">
+    <span>-</span>
+    </template>
+    <template v-else v-for="(item, index) in options">
       <template v-if="values.includes(item.value)">
         <span
           v-if="(item.elTagType === 'default' || item.elTagType === '') && (item.elTagClass === '' || item.elTagClass == null)"
@@ -10,7 +20,11 @@
         >
           {{ item.label + ' ' }}
         </span>
-        <el-tag
+       <div class="flex-a-center" v-else>
+            <div :class="['status-flag',item.elTagType||'primary']"></div>
+            {{ item.label + ' ' }}
+       </div>
+        <!-- <el-tag
           v-else
           :key="item.value + ''"
           :disable-transitions="true"
@@ -26,9 +40,10 @@
           "
           :class="item.elTagClass"
         >
-          {{ item.label + ' ' }}
-        </el-tag>
+      {{ item.label + ' ' }}
+        </el-tag> -->
       </template>
+      
     </template>
     <template v-if="unmatch && showValue">
       {{ unmatchArray }}
@@ -90,5 +105,20 @@ const handleArray = (array: Array<string | number>) => {
 <style lang="scss" scoped>
 .el-tag + .el-tag {
   margin-left: 10px;
+}
+.primary{
+    background-color: #0075C2;
+}
+.success{
+    background-color: #40BC5B;
+}
+.info{
+    background-color: #808080;
+}
+.warning{
+    background-color: #FF8D1A;
+}
+.danger{
+    background-color: #FF5252;
 }
 </style>

@@ -44,7 +44,7 @@
                       <el-table-column prop="originalName" width="202" :show-overflow-tooltip="true" label="附件名称"></el-table-column>
                       <el-table-column prop="name" width="80" align="center" :show-overflow-tooltip="true" label="操作">
                         <template #default="tool">
-                          <el-button text @click="handleDownload(tool.row.ossId)">下载</el-button>
+                          <el-button type="text" @click="handleDownload(tool.row.ossId)">下载</el-button>
                         </template>
                       </el-table-column>
                     </el-table>

@@ -98,3 +98,11 @@ export interface ResetPwdForm {
   newPassword: string;
   confirmPassword: string;
 }
+
+export interface UserAndDept {
+  id?: string;
+  parentId: string;
+  Name: string;
+  type: string;
+  children: UserAndDept[];
+}
